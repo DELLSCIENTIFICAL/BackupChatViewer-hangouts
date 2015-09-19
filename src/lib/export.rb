@@ -47,7 +47,7 @@ module Hangouts
                     people_ids.add part['id']['chat_id']
                 end
                 people_ids = people_ids.to_a.join(':')
-                conv_file.write '"' +conv_id + '","' + people_ids + '"'
+                conv_file.write '"' +conv_id + '","' + people_ids + '"' + "\n"
             end
             conv_file.close()
 
@@ -66,7 +66,7 @@ module Hangouts
                 end
             end
             people.to_a.each do |person|
-                people_file.write '"' + person[:chat_id] + '","' + person[:gaia_id] + '","' + person[:name] + '"'
+                people_file.write '"' + person[:chat_id] + '","' + person[:gaia_id] + '","' + person[:name] + '"' + "\n"
             end
             people_file.close()
 
@@ -87,7 +87,7 @@ module Hangouts
                                 segment_type = segment['type']
                                 segment_content = segment['text']
                                 segment_id = index
-                                messages_file.write '"' + conv_id.to_s + '","' + event_id.to_s + '","' + sender_id.to_s + '","' + message_id.to_s + '","' + segment_id.to_s + '","' + message_time.to_s + '","' + segment_type.to_s + '","' + segment_content.to_s.gsub('"', '""') + '"'
+                                messages_file.write '"' + conv_id.to_s + '","' + event_id.to_s + '","' + sender_id.to_s + '","' + message_id.to_s + '","' + segment_id.to_s + '","' + message_time.to_s + '","' + segment_type.to_s + '","' + segment_content.to_s.gsub('"', '""') + '"' + "\n"
                             end
                         end
                     end
