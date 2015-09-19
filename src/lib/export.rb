@@ -34,7 +34,7 @@ module Hangouts
             puts "Writing timestamp.txt"
             # int[10]
             conv_file = File.new(@options.outdir + '/timestamp.txt', 'w')
-            conv_file.write google_to_date(@data['continuation_end_timestamp'][0...10])
+            conv_file.write google_to_date(@data['continuation_end_timestamp'])
 
             puts "Writing conversations.csv"
             # conv_id,people_ids
