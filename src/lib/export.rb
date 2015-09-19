@@ -35,11 +35,6 @@ module Hangouts
                 return
             end
 
-            puts "Writing timestamp.txt"
-            # int[10]
-            conv_file = File.new(@options.outdir + '/timestamp.txt', 'w')
-            conv_file.write google_to_date(@data['continuation_end_timestamp'])
-
             puts "Writing conversations.csv"
             # conv_id,people_ids
             conv_file = File.new(@options.outdir + '/conversations.csv', 'w')
@@ -86,12 +81,27 @@ module Hangouts
                         message_id = index
                         message_time = google_to_date(event['timestamp'])
                         sender_id = event['sender_id']['chat_id']
-                        if !event['chat_message'].nil? and !event['chat_message']['message_content'].nil? and !event['chat_message']['message_content']['segment'].nil?
-                            event['chat_message']['message_content']['segment'].each_with_index do |segment, index|
-                                segment_type = segment['type']
-                                segment_content = segment['text']
-                                segment_id = index
-                                messages_file.write '"' + conv_id.to_s + '","' + event_id.to_s + '","' + sender_id.to_s + '","' + message_id.to_s + '","' + segment_id.to_s + '","' + message_time.to_s + '","' + segment_type.to_s + '","' + segment_content.to_s.gsub('"', '""') + '"' + "\n"
+                        if !event['chat_message'].nil? and !event['chat_message']['message_content'].nil?
+                            index = 0
+                            if !event['chat_message']['message_content']['segment'].nil?
+                                event['chat_message']['message_content']['segment'].each do |segment|
+                                    segment_type = segment['type']
+                                    segment_content = segment['text']
+                                    segment_id =
+                                    messages_file.write '"' + conv_id.to_s + '","' + event_id.to_s + '","' + sender_id.to_s + '","' + message_id.to_s + '","' + segment_id.to_s + '","' + message_time.to_s + '","' + segment_type.to_s + '","' + segment_content.to_s.gsub('"', '""') + '"' + "\n"
+                                    index += 1
+                                end
+                            end
+                            if !event['chat_message']['message_content']['attachment'].nil?
+                                event['chat_message']['message_content']['attachment'].each do |segment|
+                                    if segment['embed_item']['type'][0] == 'PLUS_PHOTO'
+                                        segment_type = "PLUS_PHOTO"
+                                        segment_content = segment['embed_item']['embeds.PlusPhoto.plus_photo']['original_content_url']
+                                        segment_id = index
+                                        messages_file.write '"' + conv_id.to_s + '","' + event_id.to_s + '","' + sender_id.to_s + '","' + message_id.to_s + '","' + segment_id.to_s + '","' + message_time.to_s + '","' + segment_type.to_s + '","' + segment_content.to_s.gsub('"', '""') + '"' + "\n"
+                                        index += 1
+                                    end
+                                end
                             end
                         end
                     end
@@ -105,9 +115,6 @@ module Hangouts
             if @data.nil?
                 return
             end
-
-            puts "Writing timestamp.txt"
-            puts "w`" + @options.outdir + "/timestamp.txt`: " + google_to_date(@data['continuation_end_timestamp'])
 
             puts "Writing conversations.csv"
             @data['conversation_state'].each do |conv|
