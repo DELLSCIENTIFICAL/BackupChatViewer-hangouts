@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      :not(input):not(button):not(select) {
+        font-family: Linux Libertine Display O;
+      }
+
+      .node circle {
+        fill: #fff;
+        stroke: steelblue;
+        stroke-width: 1.5px;
+      }
+
+      .link {
+        fill: none;
+        stroke: #EFDBEE;
+        stroke-width: 1.2px;
+      }
+
+      .svg {
+        position: absolute;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="top">
+      <div id="edit">
+        Graph of .... (Alt-)Click on each node to show its children. Click on each word to show its type. Hit esc to show/hide this.
+        <br>
+        Open to:
+        <span id="levels">
+        </span>
+        <select id="opento">
+        </select>
+      </div>
+      <hr>
+      <div id="description">&nbsp;<br>&nbsp;</div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script>
+    /**
+     * Repo note: all code below is the work of https://github.com/NasalMusician
+    **/
+    $(document).on('keyup', function(e) {
+            if (e.keyCode == 27) $('#edit').toggle();
+            $w.resize();
+    });
+
+    var root = {
+      name: "root",
+      description: "{hash}",
+      children: [
+        {
+          name: "continuation_end_timestamp",
+          description: "$timestamp"
+        },
+        {
+          name: "conversation_state",
+          description: "[array of hashes]",
+          children: [
+            {
+              name: "conversation_id",
+              description: "{hash}",
+              children: [
+                {
+                  name: "id",
+                  description: "$text"
+                }
+              ]
+            },
+            {
+              name: "response_header",
+              description: "{hash}",
+              children: [
+                {
+                  name: "status",
+                  description: '$text -> ["OK"]'
+                },
+                {
+                  name: "debug_url",
+                  description: '$text -> ""'
+                },
+                {
+                  name: "request_trace_id",
+                  description: "$text"
+                },
+                {
+                  name: "current_server_time",
+                  description: "$timestamp"
+                }
+              ]
+            }, 
+            {
+              name: "conversation_state",
+              description: "{hash}",
+              children: [
+                {
+                  name: "conversation_id",
+                  description: "{hash}",
+                  children: [
+                    {
+                      name: "id",
+                      description: "$text"
+                    }
+                  ]
+                }, 
+                {
+                  name: "conversation",
+                  description: "{hash}",
+                  children: [
+                    {
+                      name: "id",
+                      description: "{hash}",
+                      children: [
+                                  {
+                                    name: "id",
+                                    description: "$text"
+                                  }
+                      ]
+                    }, 
+                    {
+                      name: "type",
+                      description: '$text -> ["STICKY_ONE_TO_ONE", "GROUP"]'
+                    },
+                    {
+                      name: "self_conversation_state",
+                      description: "{hash}",
+                      children: [
+                        {
+                          name: "self_read_state", 
+                          description: '{hash}', 
+                          children: [
+                            {
+                              name: "participant_id", 
+                              description: '{hash}', 
+                              children: [
+                                {
+                                  name: "gaia_id", 
+                                  description: '$number -> external g+ number'
+                                },
+                                {
+                                  name: "chat_id", 
+                                  desccription: '$number -> private'
+                                }
+                              ]
+                            },
+                            {
+                              name: "latest_read_timestamp", 
+                              description: '$timestamp'
+                            }
+                          ]
+                        },
+                        {
+                          name: "status", 
+                          description: '$text -> ["ACTIVE"]'
+                        },
+                        {
+                          name: "notification_level", 
+                          description: '$text -> ["RING", "QUIET"]'
+                        },
+                        {
+                          name: "view", 
+                          description: '$text -> ["INBOX_VIEW", "ARCHIEVED_VIEW"]'
+                        },
+                        {
+                          name: "inviter_id", 
+                          description: '{hash}',
+                          children: [
+                            {
+                              name: "gaia_id", 
+                              description: '$number -> external g+ number'
+                            },
+                            {
+                              name: "chat_id", 
+                              description: '$number -> private'
+                            }
+                          ]
+                        },
+                        {
+                          name: "invite_timestamp", 
+                          description: '$timestamp'
+                        },
+                        {
+                          name: "sort_timestamp", 
+                          description: '$timestamp'
+                        },
+                        {
+                          name: "active_timestamp", 
+                          description: '$timestamp'
+                        },
+                        {
+                          name: "delivery_medium_option",
+                          description: '[array of hashes]',
+                          children: [
+                            {
+                              name: "delivery_medium", 
+                              description: '{hash}',
+                              children: [
+                                {
+                                  name: "medium_type", 
+                                  description: '$text -> ["BABEL_MEDIUM"]'
+                                }
+                              ]
+                            },
+                            {
+                              name: "current_default",
+                              description: '$bool' 
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      name: "read_state", 
+                      description: '[array of hashes]', 
+                      children: [
+                        {
+                          name: "participant_id", 
+                          description: '{hash}', 
+                          children: [
+                            {
+                              name: "gaia_id", 
+                              description: '$number -> external g+ number'
+                            },
+                            {
+                              name: "chat_id", 
+                              description: '$number -> private'
+                            }
+                          ]
+                        },
+                        {
+                          name: "last_read_timestamp", 
+                          description: '$timestamp -> zero?'
+                        }
+                      ]
+                    },
+                    {
+                      name: "has_active_hangout", 
+                      description: '$bool'
+                    },
+                    {
+                      name: "otr_status", 
+                      description: '$text -> ["ON_THE_RECORD"]'
+                    },
+                    {
+                      name: "otr_toggle", 
+                      description: '$text -> ["ENABLED"]'
+                    },
+                    {
+                    name: "current_participant", description: '[arary of hashes]', 
+                      children: [
+                        {
+                          name: "gaia_id", 
+                          description: '$number -> external g+ number'
+                        },
+                        {
+                          name: "chat_id", 
+                          description: '$number -> private'
+                        }
+                      ]
+                    },
+                    {
+                      name: "participant_data", 
+                      description: '[array of hashes]',
+                      children: [
+                        {
+                          name: "id",
+                          description: '{hash}',
+                          children: [
+                            {
+                              name: "gaia_id", 
+                              description: '$number -> external g+ number'
+                            },
+                            {
+                              name: "chat_id", 
+                              description: '$number -> private'
+                            }
+                          ]
+                        },
+                        {
+                          name: "fallback_name", 
+                          description: '$text'
+                        },
+                        {
+                          name: "invitation_status", 
+                          description: '$text -> ["ACCEPTED_INVITATION", "PENDING_INVITATION"]'
+                        },
+                        {
+                          name: "participant_type", 
+                          description: '$text -> ["GAIA"]'
+                        },
+                        {
+                          name: "new_invitation_status", 
+                          description: '$text -> ["ACCEPTED_INVITATION", "PENDING_INVITATION"]'
+                        }
+                      ]
+                    },
+                    {
+                      name: "fork_on_external_invite", 
+                      description: '$bool'
+                    },
+                    {
+                      name: "network_type", 
+                      description: '$text -> ["BABEL"]'
+                    },
+                    {
+                      name: "force_history_state", 
+                      description: '$text -> ["FORCE_HISTORY_UNKNOWN", "NO_FORCE"]'
+                    }
+                  ]
+                },
+                {
+                  name: "event",
+                  description: "[array of hashes]",
+                  children: [
+                    {
+                      name: "conversation_id", 
+                      description: '{hash}', 
+                      children: [
+                        {
+                          name: "id", 
+                          description: '$text'
+                        }
+                      ]
+                    },
+                    {
+                      name: "sender_id", 
+                      description: '{hash}',
+                      children: [
+                        {
+                          name: "gaia_id", 
+                          description: '$number -> external g+ number'
+                        },
+                        {
+                          name: "chat_id", 
+                          description: '$number -> private'
+                        }
+                      ]
+                    },
+                    {
+                      name: "timestamp", 
+                      description: '$timestamp'
+                    },
+                    {
+                      name: "self_event_state", 
+                      description: '{hash}', 
+                      children: [
+                        {
+                          name: "user_id", 
+                          description: '{hash}', 
+                          children: [
+                            {
+                              name: "gaia_id", 
+                              description: '$number -> external g+ number'
+                            },
+                            {
+                              name: "chat_id", 
+                              description: '$number -> private'
+                            }
+                          ]
+                        },
+                        {
+                          name: "client_generated_id", 
+                          description: '$text'
+                        },
+                        {
+                          name: "notification_level", 
+                          description: '$text -> ["RING", "QUIET"]'
+                        }
+                      ]
+                    },
+                    {
+                      name: "chat_message", 
+                      description: '{hash}', 
+                      children: [
+                        {
+                          name: "message_content", 
+                          description: '{hash}', 
+                          children: [
+                            {
+                              name: "segment", 
+                              description: '[array of hashes]',
+                              children: [
+                                {
+                                  name: "type", 
+                                  description: '$text -> ["TEXT", "LINE_BREAK", "LINK"]'
+                                },
+                                {
+                                  name: "text", 
+                                  description: '$text'
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      name: "event_id", 
+                      description: '$text'
+                    },
+                    {
+                      name: "advances_sort_timestamp", 
+                      description: '$bool'
+                    },
+                    {
+                      name: "event_otr", 
+                      description: '$text -> "ON_THE_RECORD"'
+                    },
+                    {
+                      name: "delivery_medium", 
+                      description: '{hash}', 
+                      children: [
+                        {
+                          name: "medium_type", 
+                          description: '$text -> ["BABEL_MEDIUM"]'
+                        }
+                      ]
+                    },
+                    {
+                      name: "event_type", 
+                      description: '$text -> ["REGULAR_CHAT_MESSAGE", "ADD_USER", "HANGOUT_EVENT", "REMOVE_USER"]'
+                    },
+                    {
+                      name: "event_version", 
+                      description: '$timestamp'
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    };
+
+    var anim_duration = 200,
+        i = 0,
+        last_timer = 0,
+        text_padding = 160,
+        text_padding_ratio = 0.4,
+        x_pow = 1;
+
+    var graph, updateAll;
+
+    // Construct left or right half of the graph
+    function construct_graph(root) {
+
+            var tree = d3.layout.tree();
+            var x = function(x) {
+                    // Bias the x-value so more recent branches are more
+                    // important and have more space
+                    var w = svg_size[0] - text_padding * 2;
+                    x = Math.pow(x/w,x_pow)*w;
+                    return x;
+            };
+
+            var diagonal = d3.svg.diagonal()
+                    .projection(function(d) {
+                            return [x(d.y), d.x];
+                    });
+
+            var pos = text_padding*text_padding_ratio;
+            var svg = d3.select("body").append("svg")
+            .append("g")
+                    .attr("transform", "translate("+pos+",0)");
+
+            var first = true;
+            var update = function(parent) {
+                    var duration = d3.event && d3.event.ctrlKey ? anim_duration * 10 : anim_duration;
+                    var nodes = tree.nodes(root),
+                            links = tree.links(nodes);
+
+                    // Update the nodes…
+                    var node = svg.selectAll("g.node")
+                            .data(nodes, function(d) {
+                                    return d.id || (d.id = ++i);
+                            });
+
+                    // Enter any new nodes at the parent's previous position.
+                    var nodeEnter = node.enter().append("svg:g")
+                            .attr("class", "node")
+                            .attr("transform", function(d) {
+                                    if (first)
+                                            return "translate(" + x(d.y) + "," + d.x + ")";
+                                    else
+                                            return "translate(" + x(parent.y0) + "," + parent.x0 + ")";
+                            })
+                            .on("click", function(d) {
+                                    if (!d.children && !d._children) {
+                                            d = d.parent;
+                                    }
+                                    toggle(d);
+                                    updateAll(d);
+                                    d3.event.preventDefault();
+                            });
+
+                    nodeEnter.append("svg:circle")
+                            .attr("r", 1e-6)
+                            .style("fill", function(d) {
+                                    return d._children ? "lightsteelblue" : "#fff";
+                            });
+
+                    nodeEnter.append("svg:text")
+                            .attr("x", function(d) {
+                                    var sign = (d.children || d._children || d.name === "continuation_end_timestamp" ? -1 : 1);
+                                    return sign * 10;
+                            })
+                            .attr("dy", ".35em")
+                            .attr("text-anchor", function(d) {
+                                    return (d.children || d._children || d.name === "continuation_end_timestamp") ? "end" : "start";
+                            })
+                            .style("fill-opacity", 1e-6);
+
+                    // Transition nodes to their new position.
+                    var nodeUpdate = node.transition()
+                            .duration(duration)
+                            .attr("transform", function(d) {
+                                    return "translate(" + x(d.y) + "," + d.x + ")";
+                            });
+
+                    nodeUpdate.select("circle")
+                            .attr("r", 6)
+                            .style("fill", function(d) {
+                                    return d._children ? "lightsteelblue" : "#fff";
+                            });
+
+                    node.select("text")
+                            .style("fill-opacity", 1)
+                            .text(function(d) {
+                                    return d.name;
+                            })
+                            .on('click', function(d) {
+                                    if (d3.event.altKey) d3.event.preventDefault();
+                                    else {
+                                            var children = d.children;
+                                            if (d._children) children = d._children;
+                                            if (children) var children = '<br>Children: '+$.map(children, function(node) {return node.name2;}).join(", ");
+                                            else children = '<br>&nbsp;';
+                                            $('#description').html(d.path + ': ' + d.description + children);
+                                            d3.event.stopPropagation();
+                                    }
+                            });
+
+                    // Transition exiting nodes to the parent's new position.
+                    var nodeExit = node.exit().transition()
+                            .duration(duration)
+                        .ease("linear")
+                            .attr("transform", function(d) {
+                                    return "translate(" + x(parent.y) + "," + parent.x + ")";
+                            })
+                            .remove();
+
+                    nodeExit.select("circle")
+                            .attr("r", 1e-6);
+
+                    nodeExit.select("text")
+                            .style("fill-opacity", 1e-6);
+
+                    // Update the links…
+                    var link = svg.selectAll("path.link")
+                            .data(links, function(d) {
+                                    return d.target.id;
+                            });
+
+                    // Enter any new links at the parent's previous position.
+                    if (first)
+                            link.enter().insert("svg:path", "g")
+                                    .attr("class", "link")
+                                    .attr("d", diagonal);
+                    else
+                            link.enter().insert("svg:path", "g")
+                                    .attr("class", "link")
+                                    .attr("d", function(d) {
+                                            var o = {
+                                                    x: parent.x0,
+                                                    y: parent.y0
+                                            };
+                                            return diagonal({
+                                                    source: o,
+                                                    target: o
+                                            });
+                                    })
+                                    .transition()
+                                    .duration(duration)
+                                    .attr("d", diagonal);
+
+                    // Transition links to their new position.
+                    link.transition()
+                            .duration(duration)
+                            .attr("d", diagonal);
+
+                    // Transition exiting nodes to the parent's new position.
+                    link.exit().transition()
+                            .duration(duration)
+                            .attr("d", function(d) {
+                                    var o = {
+                                            x: parent.x,
+                                            y: parent.y
+                                    };
+                                    return diagonal({
+                                            source: o,
+                                            target: o
+                                    });
+                            })
+                            .remove();
+
+                    // Stash the old positions for transition.
+                    nodes.forEach(function(d) {
+                            d.x0 = d.x;
+                            d.y0 = d.y;
+                    });
+                    first = false;
+            };
+
+            updateAll = update;
+            graph = {
+                    update: update,
+                    tree: tree,
+                    root: root,
+            };
+    }
+
+    function toggle(d) {
+            if (d.children) {
+                    d._children = d.children;
+                    d.children = null;
+            } else {
+                    d.children = d._children;
+                    d._children = null;
+            }
+    }
+
+    function reconstruct() {
+            d3.selectAll('svg').remove();
+            construct_graph(root);
+    };
+    reconstruct();
+
+
+
+    var $w = $(window);
+    var svg_size = [0,0];
+    function resize() {
+            var width = svg_size[0];
+            var height = svg_size[1];
+            d3.selectAll("svg").attr("width", width).attr("height", height);
+            if (graph === null) return;
+            graph.tree.size([height, width - text_padding * 2]);
+            graph.update(root);
+    }
+
+
+    // Allow the graph to expand with the window,
+    // but only after a 50ms delay, to ensure
+    // the resizing has truly stopped, thus
+    // avoiding excessive resizing and computation.
+    $w.resize(function() {
+            var width = $w.width() - 30,
+                    height = $w.height() - 30;
+            if ($('#top').css('display') !== 'none')
+                    height -= $('#top').height();
+            if (width == svg_size[0] && height == svg_size[1]) return;
+            svg_size = [width, height];
+            last_timer += 1;
+            var idx = last_timer;
+            d3.timer(function() {
+                    if (idx !== last_timer) return;
+                    resize();
+                    return true; // no looping
+            }, 50);
+    }).resize();
+
+
+    // Construct the lists of nodes and their paths
+    (function() {
+            var last = ""; var path = "";
+            var recurse = function(i,node) {
+                    if (!node.name) {
+                            console.log(node);
+                            return;
+                    }
+                    var name = node.name.replace(/<(?:.|\n)*?>/gm, '') + " \u2014 " + node.name.replace(/<(?:.|\n)*?>/gm, '');
+                    if (i === null) name = "[root]";
+                    var opt = '<option value="'+node.name+'">'+last+name+'</option>';
+                    $('select#parent').append(opt);
+                    $('select#opento').append(opt);
+                    var children = node.children;
+                    if (!children) children = node._children;
+                    var l = last, p = path;
+                    last += "\u00B7 "; // middle dot
+                    path += node.name;
+                    if (node.description && node.description.indexOf("array") >= 0) {
+                            path += "[]";
+                            node.name2 = node.name+"[]";
+                    } else node.name2 = node.name;
+                    node.path = path;
+                    path += ".";
+                    if (children) {
+                            $.each(children, recurse);
+                    }
+                    last = l; path = p;
+            };
+            recurse(null,root);
+    })();
+
+
+    // Implement "open to level X" buttons
+    (function() {
+            var level = 0; var max_level = -1;
+            var recurse = function(i,node) {
+                    if (level > max_level) {
+                            $('#levels').append('<button data-level="'+level+'">Level '+level+'</button>');
+                            max_level = level;
+                    }
+                    var children = node.children;
+                    if (!children) children = node._children;
+                    if (children) {
+                            level += 1;
+                            $.each(children, recurse);
+                            level -= 1;
+                    }
+            };
+            recurse(null,root);
+            $('#levels button:first').attr('id', 'closeall').text('Close all nodes');
+            $('#levels button:last').attr('id', 'openall').text('Open all');
+            var recurse = function(i,node) {
+                    var change = true;
+                    if (level < 0) {
+                            if (node._children) node.children = node._children;
+                            else change = false;
+                            node._children = null;
+                    } else {
+                            if (node.children) node._children = node.children;
+                            else change = false;
+                            node.children = null;
+                    }
+                    if (change) updateAll(node);
+                    updateAll(node);
+                    var children = node.children;
+                    if (!children) children = node._children;
+                    if (children) {
+                            level += 1;
+                            $.each(children, recurse);
+                            level -= 1;
+                    }
+            };
+            $('#levels button:not([id])').on('click', function() {
+                    level = -$(this).data('level');
+                    recurse(null,root);
+            });
+    })();
+    (function() {
+            var open;
+            var recurse = function(i,node) {
+                    var change = true;
+                    if (open) {
+                            if (node._children) node.children = node._children;
+                            else change = false;
+                            node._children = null;
+                    } else {
+                            if (node.children) node._children = node.children;
+                            else change = false;
+                            node.children = null;
+                    }
+                    if (change) updateAll(node);
+                    var children = node.children;
+                    if (!children) children = node._children;
+                    if (children) {
+                            $.each(children, recurse);
+                    }
+            };
+            $('#openall').on('click', function() {
+                    open=true;
+                    recurse(null,root);
+            });
+            $('#closeall').on('click', function() {
+                    open=false;
+                    recurse(null,root);
+            });
+    })();
+
+    // Implement "open to node X" selector
+    var node_map = {};
+    (function() {
+            (function() {
+                    var recurse = function(root) {
+                            return function(i,node) {
+                                    // preload parents (tree will do this
+                                    // too, but only for visible nodes)
+                                    node.parent = root;
+                                    // add to node_map
+                                    if (node.name) {
+                                            node_map[node.name] = node;
+                                            node_map[node.name] = node;
+                                    }
+                                    var children = node.children;
+                                    if (!children) children = node._children;
+                                    if (children) {
+                                            $.each(children, recurse(node));
+                                    }
+                            };
+                    }
+                    recurse(null)(null,root);
+            })();
+
+            $('#opento').on('change', function() {
+                    var $this = $(this), val = $this.val();
+                    if (val === "[root]") return;
+                    var node = node_map[val];
+                    while (node.parent) {
+                            node = node.parent;
+                            if (node._children) node.children = node._children;
+                            node._children = null;
+                            updateAll(node);
+                    }
+                    $(this).val("[root]");
+            });
+    })();
+
+    // Implement add a node support
+    $('#enter').on('click', function() {
+            var trim = function(x) {
+                    return $.map(x, function(xx) {
+                            return xx.trim();
+                    });
+            }
+            var names = {};
+            $.each(root.name, function(code, name) {
+                    var val = $('#'+code).val().trim();
+                    if (val)
+                            if (val.indexOf(",") >= 0)
+                                    names[code] = trim(val.split(","));
+                            else names[code] = val;
+            });
+
+            var parent = node_map[$('#parent').val()];
+            if (!parent) alert('Error! Could not insert node into tree');
+            if (parent._children) {
+                    parent.children = parent._children;
+                    parent._children = null;
+            }
+            parent.children.push({name:names})
+            updateAll(parent);
+            while (parent.parent) {
+                    if (parent._children) {
+                            parent.children = parent._children;
+                            parent._children = null;
+                            updateAll(parent);
+                    }
+                    parent = parent.parent;
+            }
+    });
+
+
+    </script>
+  </body>
+</html>
