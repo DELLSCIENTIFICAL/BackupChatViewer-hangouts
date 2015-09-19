@@ -18,8 +18,8 @@ module Hangouts
                 GC.start()
             else
                 puts "Missing input file #{@options.inpath}..."
+                @data = nil
             end
-
         end
 
         def start()
@@ -31,6 +31,10 @@ module Hangouts
         end
 
         def export()
+            if @data.nil?
+                return
+            end
+
             puts "Writing timestamp.txt"
             # int[10]
             conv_file = File.new(@options.outdir + '/timestamp.txt', 'w')
@@ -39,7 +43,7 @@ module Hangouts
             puts "Writing conversations.csv"
             # conv_id,people_ids
             conv_file = File.new(@options.outdir + '/conversations.csv', 'w')
-            conv_file.write "conv_id,people_ids"
+            conv_file.write "conv_id,people_ids" + "\n"
             @data['conversation_state'].each do |conv|
                 conv_id = conv['conversation_id']['id']
                 people_ids = Set.new
@@ -55,7 +59,7 @@ module Hangouts
             # chat_id,gaia_id,name
             people = Set.new
             people_file = File.new(@options.outdir + '/people.csv', 'w')
-            people_file.puts "chat_id,gaia_id,name"
+            people_file.puts "chat_id,gaia_id,name" + "\n"
             @data['conversation_state'].each do |conv|
                 conv['conversation_state']['conversation']['participant_data'].each do |part|
                     chat_id = part['id']['chat_id']
@@ -73,7 +77,7 @@ module Hangouts
             puts "Writing messages.csv"
             # conv_id,event_id,sender_id,message_id,segment_id,message_time,segment_type,segment_content
             messages_file = File.new(@options.outdir + '/messages.csv', 'w')
-            messages_file.write "conv_id,event_id,sender_id,message_id,segment_id,message_time,segment_type,segment_content"
+            messages_file.write "conv_id,event_id,sender_id,message_id,segment_id,message_time,segment_type,segment_content" + "\n"
             @data['conversation_state'].each do |conv|
                 conv_id = conv['conversation_id']['id']
                 if !conv['conversation_state'] .nil? and !conv['conversation_state']['event'].nil?
@@ -98,6 +102,10 @@ module Hangouts
         end
 
         def export_dry()
+            if @data.nil?
+                return
+            end
+
             puts "Writing timestamp.txt"
             puts "w`" + @options.outdir + "/timestamp.txt`: " + google_to_date(@data['continuation_end_timestamp'])
 
