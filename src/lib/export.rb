@@ -10,6 +10,7 @@ module Hangouts
         def initialize()
             @options = Hangouts.options()
             if File.exists?(@options.inpath)
+                puts "Reading file into JSON object in memory..."
                 temporary = File.read(@options.inpath)
                 @data = JSON.parse(temporary)
                 temporary = nil
@@ -29,11 +30,23 @@ module Hangouts
 
         def export_dry()
             puts "Writing timestamp: "
-            puts "w`#{@options.outdir + "/timestamp.txt"}` #{@data['continuation_end_timestamp'][0...10]}"
-            #File.write(@options.outdir + "/timestamp.txt").puts @data['continuation_end_timestamp'][0...10]
+            puts "w`" + @options.outdir + "/timestamp.txt`: " + @data['continuation_end_timestamp'][0...10]
+            puts "Writing conversations.csv"
+            @data['conversation_state'].each do |conv|
+                conv_id = conv['conversation_id']['id']
+                people_ids = new Set
+                conv['conversation_state']['conversation']['participant_data'].each do |part|
+                    people_ids.add part['id']['chat_id']
+                end
+                people_ids = people_ids.to_a.join(':')
+                puts "w`" + @options.outdir + '/conversations.csv`: "' +conv_id + '","' + people_ids + '"'
+            end
         end
 
         def export()
+        end
+
+        def close()
         end
     end
 end
